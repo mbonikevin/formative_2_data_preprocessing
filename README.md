@@ -33,18 +33,3 @@ src/
   audio/ (the scripts for the voice track)
 notebooks/ (charts, tests, and model training)
 ```
-
-## What the voice part does
-
-1. Each member records two phrases: "Yes, approve" and "Confirm transaction".
-2. Show each recording as a waveform and a spectrogram.
-3. Make extra copies by changing the pitch, the speed, and adding noise.
-4. Take useful numbers from the audio and save them in audio_features.csv.
-5. Train a model that can tell a known voice from an unknown one.
-6. Test it with a fake voice to make sure it blocks the wrong person.
-
-## Recording your audio
-
-Each member records two short clips, one for each phrase, and saves them as WAV files.
-Name them so we know who recorded what, for example kevin_approve_01.wav and kevin_confirm_01.wav.
-Put the finished recordings in data/audio/raw/.

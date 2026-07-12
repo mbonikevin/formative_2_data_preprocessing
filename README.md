@@ -1,4 +1,4 @@
-# Multimodal Data Preprocessing and Verification Pipeline
+# Data Preprocessing
 
 This project checks who a user is before showing them product recommendations.
 A user has to pass two checks, one after the other:

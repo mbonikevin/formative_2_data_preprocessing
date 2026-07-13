@@ -1,13 +1,13 @@
 """
-Load every voice recording and show it as a waveform and a spectrogram.
+load every voice recording and show it as a waveform and a spectrogram
 
-A waveform shows how loud the sound is over time.
-A spectrogram shows which pitches (frequencies) are present over time.
+a waveform shows how loud the sound is over time, and a spectrogram shows
+which pitches show up over time
 
-Run it:
+run it with:
     python src/audio/load_display.py
 
-The pictures are saved in data/audio/plots/ so we can put them in the report.
+the pictures get saved in data/audio/plots/ so we can drop them in the report
 """
 
 from pathlib import Path
@@ -17,34 +17,33 @@ import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
 
-# folders
-RAW_DIR = Path("data/audio/raw")
-PLOTS_DIR = Path("data/audio/plots")
+raw_dir = Path("data/audio/raw")
+plots_dir = Path("data/audio/plots")
 
-# every recording is loaded at this sample rate so they all match
-SAMPLE_RATE = 16000
+# load everything at the same sample rate so the clips match
+sample_rate = 16000
 
 
 def load_clip(path):
-    """Read one wav file and return the sound samples and the sample rate."""
-    samples, sr = librosa.load(path, sr=SAMPLE_RATE, mono=True)
+    # read one wav file and give back the samples plus the sample rate
+    samples, sr = librosa.load(path, sr=sample_rate, mono=True)
     return samples, sr
 
 
 def show_clip(path, save=True):
-    """Draw the waveform and spectrogram for one recording."""
+    # draw the waveform and the spectrogram for one recording
     samples, sr = load_clip(path)
-    name = path.stem  # file name without .wav
+    name = path.stem  # file name without the .wav
 
     fig, (ax_wave, ax_spec) = plt.subplots(2, 1, figsize=(10, 6))
 
-    # top picture: the waveform
+    # top picture is the waveform
     librosa.display.waveshow(samples, sr=sr, ax=ax_wave)
     ax_wave.set_title(f"{name} - waveform")
     ax_wave.set_xlabel("time (seconds)")
     ax_wave.set_ylabel("loudness")
 
-    # bottom picture: the spectrogram (in decibels so it is easy to read)
+    # bottom picture is the spectrogram, in decibels so its easier to read
     spec = librosa.amplitude_to_db(np.abs(librosa.stft(samples)), ref=np.max)
     img = librosa.display.specshow(spec, sr=sr, x_axis="time", y_axis="hz", ax=ax_spec)
     ax_spec.set_title(f"{name} - spectrogram")
@@ -54,8 +53,8 @@ def show_clip(path, save=True):
     fig.tight_layout()
 
     if save:
-        PLOTS_DIR.mkdir(parents=True, exist_ok=True)
-        out = PLOTS_DIR / f"{name}.png"
+        plots_dir.mkdir(parents=True, exist_ok=True)
+        out = plots_dir / f"{name}.png"
         fig.savefig(out, dpi=120)
         print(f"saved {out}")
 
@@ -63,19 +62,19 @@ def show_clip(path, save=True):
 
 
 def main():
-    clips = sorted(RAW_DIR.glob("*.wav"))
+    clips = sorted(raw_dir.glob("*.wav"))
     if not clips:
-        print(f"No wav files found in {RAW_DIR}. Add the recordings first.")
+        print(f"no wav files in {raw_dir}, add the recordings first")
         return
 
-    print(f"Found {len(clips)} recordings.")
+    print(f"found {len(clips)} recordings")
     for path in clips:
         samples, sr = load_clip(path)
         seconds = len(samples) / sr
-        print(f"  {path.name}  ({seconds:.1f}s)")
+        print(f"  {path.name} ({seconds:.1f}s)")
         show_clip(path)
 
-    print("\nDone. The pictures are in data/audio/plots/")
+    print("\ndone, the pictures are in data/audio/plots/")
 
 
 if __name__ == "__main__":

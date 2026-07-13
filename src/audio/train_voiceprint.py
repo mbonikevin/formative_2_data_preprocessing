@@ -1,22 +1,22 @@
 """
-Train the voice check model.
+train the voice check model
 
-The model looks at the numbers in audio_features.csv and learns to tell
-whose voice a clip belongs to (james, kevin, or sheilla).
+the model looks at the numbers in audio_features.csv and learns whose voice
+a clip belongs to (james, kevin or sheilla)
 
-It also learns to say "I don't know this voice". When the model is not sure
-enough about any known person, we treat the clip as an unknown/unauthorized
-voice and block it. This is what protects the system from a stranger.
+it also needs to say "i dont know this voice" when a stranger shows up, so we
+add a second check that measures how far a clip sits from the real voices we
+have seen, a stranger sits much further away and gets blocked
 
-We measure how good the model is with three numbers:
-  - Accuracy : how often it picks the right person
-  - F1 score : a balanced score that is fair when classes are small
-  - Loss     : how far off its confidence is (lower is better)
+we measure the model with three numbers:
+  accuracy, how often it picks the right person
+  f1 score, a balanced score that is fair when the classes are small
+  loss, how far off its confidence is, lower is better
 
-Run it:
+run it with:
     python src/audio/train_voiceprint.py
 
-The trained model is saved in models/voiceprint_model.joblib so the app can use it.
+the trained model gets saved in models/voiceprint_model.joblib so the app can use it
 """
 
 from pathlib import Path
@@ -27,23 +27,24 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, log_loss, classification_report
 from sklearn.model_selection import train_test_split
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import StandardScaler
 
-FEATURES_FILE = Path("data/audio/features/audio_features.csv")
-MODEL_DIR = Path("models")
-MODEL_FILE = MODEL_DIR / "voiceprint_model.joblib"
+features_file = Path("data/audio/features/audio_features.csv")
+model_dir = Path("models")
+model_file = model_dir / "voiceprint_model.joblib"
 
-# label columns are not features
-LABEL_COLS = ["file", "speaker", "phrase", "source"]
+# these columns are labels, not features
+label_cols = ["file", "speaker", "phrase", "source"]
 
-# if the model's best guess is less confident than this, we treat the
-# voice as unknown and block it
-CONFIDENCE_THRESHOLD = 0.5
+# if the model's best guess is less sure than this, we treat the voice as unknown
+confidence_threshold = 0.5
 
 
 def load_data():
-    """Read the features file and split it into the numbers (X) and the answer (y)."""
-    df = pd.read_csv(FEATURES_FILE)
-    feature_cols = [c for c in df.columns if c not in LABEL_COLS]
+    # read the features file and split it into the numbers and the answer
+    df = pd.read_csv(features_file)
+    feature_cols = [c for c in df.columns if c not in label_cols]
     X = df[feature_cols].values
     y = df["speaker"].values
     return X, y, feature_cols
@@ -51,14 +52,13 @@ def load_data():
 
 def main():
     X, y, feature_cols = load_data()
-    print(f"Loaded {len(X)} clips from {len(set(y))} speakers: {sorted(set(y))}")
+    print(f"loaded {len(X)} clips from {len(set(y))} speakers: {sorted(set(y))}")
 
-    # keep some clips aside to test the model on voices it trained on,
-    # split evenly so every speaker shows up in both parts
+    # keep some clips aside to test on, split evenly so every speaker shows up in both parts
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=42, stratify=y
     )
-    print(f"Training on {len(X_train)} clips, testing on {len(X_test)} clips.\n")
+    print(f"training on {len(X_train)} clips, testing on {len(X_test)} clips\n")
 
     # the model itself
     model = RandomForestClassifier(n_estimators=200, random_state=42)
@@ -72,29 +72,47 @@ def main():
     f1 = f1_score(y_test, y_pred, average="macro")
     loss = log_loss(y_test, y_proba, labels=model.classes_)
 
-    print("How the model did on the test clips:")
-    print(f"  Accuracy : {accuracy:.3f}")
-    print(f"  F1 score : {f1:.3f}")
-    print(f"  Loss     : {loss:.3f}\n")
+    print("how the model did on the test clips:")
+    print(f"accuracy is {accuracy:.3f}")
+    print(f"f1 score is {f1:.3f}")
+    print(f"loss is {loss:.3f}\n")
 
-    print("Detailed report per speaker:")
+    print("report per speaker:")
     print(classification_report(y_test, y_pred, zero_division=0))
 
-    # retrain on all the clips so the saved model is as strong as possible
+    # retrain on all the clips so the saved model is as strong as we can make it
     final_model = RandomForestClassifier(n_estimators=200, random_state=42)
     final_model.fit(X, y)
 
-    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    # second check, learn what a real voice looks like so we can spot strangers.
+    # we put all the features on the same scale, then for each real clip measure
+    # how far its closest neighbour is, a stranger will sit further out
+    scaler = StandardScaler().fit(X)
+    X_scaled = scaler.transform(X)
+
+    neighbours = NearestNeighbors(n_neighbors=2).fit(X_scaled)
+    dists, _ = neighbours.kneighbors(X_scaled)
+    nearest = dists[:, 1]  # column 0 is the point itself so we use column 1
+
+    # anything further than this from a real voice is treated as a stranger,
+    # we take the biggest gap between real clips and leave a bit of room
+    distance_cutoff = float(nearest.max() * 1.5)
+    print(f"\nstranger distance cutoff set to {distance_cutoff:.2f}")
+
+    model_dir.mkdir(parents=True, exist_ok=True)
     joblib.dump(
         {
             "model": final_model,
             "feature_cols": feature_cols,
             "speakers": sorted(set(y)),
-            "threshold": CONFIDENCE_THRESHOLD,
+            "threshold": confidence_threshold,
+            "scaler": scaler,
+            "neighbours": neighbours,
+            "distance_cutoff": distance_cutoff,
         },
-        MODEL_FILE,
+        model_file,
     )
-    print(f"Saved the trained model to {MODEL_FILE}")
+    print(f"saved the trained model to {model_file}")
 
 
 if __name__ == "__main__":

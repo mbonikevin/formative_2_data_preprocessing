@@ -16,14 +16,14 @@ are stopped too, only after both checks pass do they see any recommendations
 
 - member 1 does the face part, the face photos and the face recognition model
 - member 2 does the voice part, the recordings and the voice check model, thats the track in this repo
-- member 3 does the data and the final app that ties everything together
+- Mukunzi Ndahiro James does the data and the final app that ties everything together
 
 ## folders
 
 ```
 data/
   raw/ (the original customer csv files)
-  processed/ (cleaned and merged data, member 3)
+  processed/ (cleaned and merged data, Mukunzi Ndahiro James)
   audio/
     raw/ (the voice recordings from each member)
     augmented/ (edited copies: pitch, speed and noise)
@@ -34,7 +34,7 @@ src/
   audio/ (the scripts for the voice track)
 models/ (the saved trained models, like the voiceprint model)
 notebooks/
-  data_merge.ipynb (member 3, merges the two csv files and builds the dataset)
+  data_merge.ipynb (Mukunzi Ndahiro James, merges the two csv files and builds the dataset)
   image_face_track.ipynb (member 1, the face photos and face recognition)
   audio_track.ipynb (member 2, the voice recordings and voice check model)
 ```

@@ -29,9 +29,14 @@ data/
     augmented/ (edited copies: pitch, speed and noise)
     features/ (audio_features.csv, the numbers taken from the audio)
     plots/ (waveform and spectrogram pictures)
+    unauthorized/ (the fake stranger clip for the deny test)
 src/
   audio/ (the scripts for the voice track)
-notebooks/ (charts, tests and model training)
+models/ (the saved trained models, like the voiceprint model)
+notebooks/
+  data_merge.ipynb (member 3, merges the two csv files and builds the dataset)
+  image_face_track.ipynb (member 1, the face photos and face recognition)
+  audio_track.ipynb (member 2, the voice recordings and voice check model)
 ```
 
 ## setup

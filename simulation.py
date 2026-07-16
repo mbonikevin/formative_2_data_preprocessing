@@ -1,22 +1,4 @@
 #!/usr/bin/env python3
-"""
-User identity and product recommendation system.
-
-Flow:
-1. Face verification (Random Forest on HOG + colour features) -> access granted or denied
-2. Voice verification (Random Forest voiceprint) -> transaction approved or denied
-3. Product recommendation (Random Forest) -> product predicted
-
-Usage:
-    python simulation.py --face data/images/extracted/james_face.jpg \
-                         --voice data/audio/raw/james_approve.wav \
-                         --member James
-
-    python simulation.py --face data/images/extracted/unauthorized_attempt.png \
-                         --voice data/audio/unauthorized/stranger_attempt.wav \
-                         --member James
-"""
-
 import os
 import sys
 import time
